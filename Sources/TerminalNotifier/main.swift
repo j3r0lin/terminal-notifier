@@ -1,13 +1,26 @@
 import Foundation
 import Cocoa
+import UserNotifications
 
 // MARK: - Main Application
 class TerminalNotifierApp: NSObject, NSApplicationDelegate {
     let notificationManager = NotificationManager()
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Set the notification center delegate
+        // Set the notification center delegates
         NSUserNotificationCenter.default.delegate = notificationManager
+        UNUserNotificationCenter.current().delegate = notificationManager
+        
+        // Request UserNotifications authorization
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error = error {
+                if DEBUG_MODE { print("DEBUG: UserNotifications authorization error: \(error)") }
+            } else if granted {
+                if DEBUG_MODE { print("DEBUG: UserNotifications authorization granted") }
+            } else {
+                if DEBUG_MODE { print("DEBUG: UserNotifications authorization denied") }
+            }
+        }
         
         // Parse command line arguments
         let arguments = CommandLine.arguments

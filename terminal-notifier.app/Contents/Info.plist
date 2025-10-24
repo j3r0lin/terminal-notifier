@@ -26,5 +26,7 @@
     <string>NSApplication</string>
     <key>LSUIElement</key>
     <true/>
+    <key>NSUserNotificationsUsageDescription</key>
+    <string>This app sends notifications to display messages from the command line.</string>
 </dict>
 </plist>

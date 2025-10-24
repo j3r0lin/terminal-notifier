@@ -1,11 +1,12 @@
 import Foundation
 import Cocoa
+import UserNotifications
 
 // MARK: - Constants
 var DEBUG_MODE = false
 
 // MARK: - Notification Manager
-class NotificationManager: NSObject, NSUserNotificationCenterDelegate {
+class NotificationManager: NSObject, UNUserNotificationCenterDelegate, NSUserNotificationCenterDelegate {
     
     func deliverNotification(title: String, subtitle: String?, message: String, options: [String: Any], sound: String?) {
         if DEBUG_MODE { print("DEBUG: Delivering notification - Title: \(title), Message: \(message)") }
@@ -15,6 +16,92 @@ class NotificationManager: NSObject, NSUserNotificationCenterDelegate {
             removeNotification(groupID: groupID)
         }
         
+        // Try UserNotifications first (modern approach)
+        if tryUserNotifications(title: title, subtitle: subtitle, message: message, options: options, sound: sound) {
+            if DEBUG_MODE { print("DEBUG: Using UserNotifications framework") }
+            return
+        }
+        
+        // Fallback to NSUserNotificationCenter
+        if DEBUG_MODE { print("DEBUG: Falling back to NSUserNotificationCenter") }
+        deliverNotificationFallback(title: title, subtitle: subtitle, message: message, options: options, sound: sound)
+    }
+    
+    private func tryUserNotifications(title: String, subtitle: String?, message: String, options: [String: Any], sound: String?) -> Bool {
+        let center = UNUserNotificationCenter.current()
+        center.delegate = self
+        
+        // Check authorization status first
+        center.getNotificationSettings { settings in
+            if settings.authorizationStatus == .authorized {
+                self.scheduleUserNotification(title: title, subtitle: subtitle, message: message, options: options, sound: sound)
+            } else {
+                if DEBUG_MODE { print("DEBUG: UserNotifications not authorized, falling back to NSUserNotificationCenter") }
+                DispatchQueue.main.async {
+                    self.deliverNotificationFallback(title: title, subtitle: subtitle, message: message, options: options, sound: sound)
+                }
+            }
+        }
+        
+        return true
+    }
+    
+    private func scheduleUserNotification(title: String, subtitle: String?, message: String, options: [String: Any], sound: String?) {
+        let center = UNUserNotificationCenter.current()
+        
+        // Create notification content
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = message
+        
+        if let subtitle = subtitle {
+            content.subtitle = subtitle
+        }
+        
+        // Set sound
+        if let sound = sound {
+            if sound == "default" {
+                content.sound = UNNotificationSound.default
+            } else {
+                content.sound = UNNotificationSound(named: UNNotificationSoundName(sound))
+            }
+        }
+        
+        // Set user info
+        var userInfo: [String: Any] = options
+        userInfo["originalTitle"] = title
+        userInfo["originalMessage"] = message
+        content.userInfo = userInfo
+        
+        // Set category for actions if needed
+        if options["open"] != nil || options["command"] != nil || options["bundleID"] != nil {
+            content.categoryIdentifier = "TERMINAL_NOTIFIER_ACTIONS"
+        }
+        
+        // Create request with identifier
+        let identifier = options["groupID"] as? String ?? UUID().uuidString
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
+        
+        // Schedule notification
+        center.add(request) { error in
+            if let error = error {
+                if DEBUG_MODE { print("DEBUG: UserNotifications error: \(error)") }
+                // Fallback to NSUserNotificationCenter on error
+                DispatchQueue.main.async {
+                    self.deliverNotificationFallback(title: title, subtitle: subtitle, message: message, options: options, sound: sound)
+                }
+            } else {
+                if DEBUG_MODE { print("DEBUG: UserNotifications notification scheduled") }
+                // Keep the app running briefly to allow notification delivery
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                    if DEBUG_MODE { print("DEBUG: Timeout reached, exiting") }
+                    exit(0)
+                }
+            }
+        }
+    }
+    
+    private func deliverNotificationFallback(title: String, subtitle: String?, message: String, options: [String: Any], sound: String?) {
         let notification = NSUserNotification()
         notification.title = title
         notification.informativeText = message
@@ -42,7 +129,7 @@ class NotificationManager: NSObject, NSUserNotificationCenterDelegate {
         center.delegate = self
         center.scheduleNotification(notification)
         
-        if DEBUG_MODE { print("DEBUG: Notification scheduled") }
+        if DEBUG_MODE { print("DEBUG: NSUserNotificationCenter notification scheduled") }
         
         // Keep the app running briefly to allow notification delivery
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
@@ -52,6 +139,32 @@ class NotificationManager: NSObject, NSUserNotificationCenterDelegate {
     }
     
     func removeNotification(groupID: String) {
+        // Try UserNotifications first
+        let unCenter = UNUserNotificationCenter.current()
+        unCenter.getNotificationSettings { settings in
+            if settings.authorizationStatus == .authorized {
+                unCenter.getDeliveredNotifications { notifications in
+                    for notification in notifications {
+                        let userInfo = notification.request.content.userInfo
+                        if let notificationGroupID = userInfo["groupID"] as? String,
+                           notificationGroupID == groupID {
+                            unCenter.removeDeliveredNotifications(withIdentifiers: [notification.request.identifier])
+                            print("* Removing previously sent notification, which was sent on: \(Date())")
+                            return
+                        }
+                    }
+                    
+                    // Fallback to NSUserNotificationCenter
+                    self.removeNotificationFallback(groupID: groupID)
+                }
+            } else {
+                // UserNotifications not authorized, use NSUserNotificationCenter
+                self.removeNotificationFallback(groupID: groupID)
+            }
+        }
+    }
+    
+    private func removeNotificationFallback(groupID: String) {
         let center = NSUserNotificationCenter.default
         let deliveredNotifications = center.deliveredNotifications
         
@@ -67,10 +180,47 @@ class NotificationManager: NSObject, NSUserNotificationCenterDelegate {
     }
     
     func listNotifications(groupID: String) {
+        print("GroupID\tTitle\tSubtitle\tMessage\tDelivered At")
+        
+        // Try UserNotifications first
+        let unCenter = UNUserNotificationCenter.current()
+        unCenter.getNotificationSettings { settings in
+            if settings.authorizationStatus == .authorized {
+                unCenter.getDeliveredNotifications { notifications in
+                    var foundNotifications = false
+                    
+                    for notification in notifications {
+                        let userInfo = notification.request.content.userInfo
+                        let groupIDValue = userInfo["groupID"] as? String ?? ""
+                        let title = notification.request.content.title
+                        let subtitle = notification.request.content.subtitle
+                        let message = notification.request.content.body
+                        let deliveryDate = notification.date.description
+                        
+                        if groupID == "ALL" {
+                            print("\(groupIDValue)\t\(title)\t\(subtitle)\t\(message)\t\(deliveryDate)")
+                            foundNotifications = true
+                        } else if groupIDValue == groupID {
+                            print("\(groupID)\t\(title)\t\(subtitle)\t\(message)\t\(deliveryDate)")
+                            foundNotifications = true
+                        }
+                    }
+                    
+                    // If no notifications found in UserNotifications, try NSUserNotificationCenter
+                    if !foundNotifications {
+                        self.listNotificationsFallback(groupID: groupID)
+                    }
+                }
+            } else {
+                // UserNotifications not authorized, use NSUserNotificationCenter
+                self.listNotificationsFallback(groupID: groupID)
+            }
+        }
+    }
+    
+    private func listNotificationsFallback(groupID: String) {
         let center = NSUserNotificationCenter.default
         let deliveredNotifications = center.deliveredNotifications
-        
-        print("GroupID\tTitle\tSubtitle\tMessage\tDelivered At")
         
         for notification in deliveredNotifications {
             if groupID == "ALL" {
@@ -96,7 +246,36 @@ class NotificationManager: NSObject, NSUserNotificationCenterDelegate {
         }
     }
     
-    // MARK: - NSUserNotificationCenterDelegate
+    // MARK: - UNUserNotificationCenterDelegate
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        if DEBUG_MODE { print("DEBUG: UserNotifications - didReceive response") }
+        
+        let userInfo = response.notification.request.content.userInfo
+        
+        if let bundleID = userInfo["bundleID"] as? String {
+            activateApp(bundleID: bundleID)
+        }
+        if let urlString = userInfo["open"] as? String,
+           let url = URL(string: urlString) {
+            NSWorkspace.shared.open(url)
+        }
+        if let command = userInfo["command"] as? String {
+            executeShellCommand(command)
+        }
+        
+        completionHandler()
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        if DEBUG_MODE { print("DEBUG: UserNotifications - willPresent notification") }
+        if #available(macOS 11.0, *) {
+            completionHandler([.banner, .sound])
+        } else {
+            completionHandler([.alert, .sound])
+        }
+    }
+    
+    // MARK: - NSUserNotificationCenterDelegate (Fallback)
     func userNotificationCenter(_ center: NSUserNotificationCenter, didActivate notification: NSUserNotification) {
         if let userInfo = notification.userInfo {
             if let bundleID = userInfo["bundleID"] as? String {
@@ -113,12 +292,12 @@ class NotificationManager: NSObject, NSUserNotificationCenterDelegate {
     }
     
     func userNotificationCenter(_ center: NSUserNotificationCenter, shouldPresent notification: NSUserNotification) -> Bool {
-        if DEBUG_MODE { print("DEBUG: shouldPresent called") }
+        if DEBUG_MODE { print("DEBUG: NSUserNotificationCenter - shouldPresent called") }
         return true
     }
     
     func userNotificationCenter(_ center: NSUserNotificationCenter, didDeliver notification: NSUserNotification) {
-        if DEBUG_MODE { print("DEBUG: Notification delivered successfully") }
+        if DEBUG_MODE { print("DEBUG: NSUserNotificationCenter - Notification delivered successfully") }
         // Don't exit immediately, let the app run a bit longer
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             exit(0)
