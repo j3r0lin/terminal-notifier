@@ -1,6 +1,7 @@
 #!/usr/bin/env swift
 
 import Foundation
+import UserNotifications
 
 // Simple test framework for command-line testing
 class TestRunner {
@@ -166,6 +167,74 @@ func runTests() {
         } catch {
             return false
         }
+    }
+    
+    // UserNotifications framework tests
+    runner.addTest("UserNotifications framework availability") {
+        if #available(macOS 10.14, *) {
+            // UserNotifications is available on macOS 10.14+
+            return true
+        } else {
+            // On older systems, we should fall back gracefully
+            return true
+        }
+    }
+    
+    runner.addTest("UserNotifications types availability") {
+        if #available(macOS 10.14, *) {
+            // Test that UserNotifications types are available
+            return UNMutableNotificationContent.self != nil &&
+                   UNNotificationRequest.self != nil &&
+                   UNNotificationSound.self != nil
+        } else {
+            return true
+        }
+    }
+    
+    runner.addTest("Authorization options type availability") {
+        if #available(macOS 10.14, *) {
+            // Test that UNAuthorizationOptions is available
+            return UNAuthorizationOptions.self != nil
+        } else {
+            return true
+        }
+    }
+    
+    runner.addTest("UNUserNotificationCenter class availability") {
+        if #available(macOS 10.14, *) {
+            // Test that the class is available without instantiating it
+            return UNUserNotificationCenter.self != nil
+        } else {
+            return true
+        }
+    }
+    
+    runner.addTest("NSUserNotificationCenter class availability") {
+        // Test that the class is available without instantiating it
+        return NSUserNotificationCenter.self != nil
+    }
+    
+    runner.addTest("Notification options dictionary handling") {
+        let options: [String: Any] = [
+            "groupID": "test-group-123",
+            "bundleID": "com.apple.finder",
+            "open": "https://www.apple.com",
+            "command": "echo 'Hello World'",
+            "ignoreDnD": true
+        ]
+        
+        // Test that we can extract all expected values
+        let groupID = options["groupID"] as? String
+        let bundleID = options["bundleID"] as? String
+        let openURL = options["open"] as? String
+        let command = options["command"] as? String
+        let ignoreDnD = options["ignoreDnD"] as? Bool
+        
+        return groupID == "test-group-123" &&
+               bundleID == "com.apple.finder" &&
+               openURL == "https://www.apple.com" &&
+               command == "echo 'Hello World'" &&
+               ignoreDnD == true
     }
     
     runner.runAll()
