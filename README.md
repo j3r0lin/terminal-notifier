@@ -11,7 +11,7 @@ terminal-notifier is a command-line tool to send macOS User Notifications, writt
 - Group notifications and remove previous ones
 - Open URLs or activate applications when clicked
 - Execute shell commands when notifications are clicked
-- Support for content images (app icons are limited by macOS)
+- Support for content images and custom app bundles
 - Bypass Do Not Disturb mode
 - List and remove existing notifications
 - Debug mode for troubleshooting
@@ -111,7 +111,7 @@ terminal-notifier -[message|list|remove] [VALUE|ID|ID] [options]
 - `-group ID` - Group identifier (removes old notifications with same ID)
 - `-activate ID` - Bundle identifier of app to activate when clicked
 - `-sender ID` - Bundle identifier of app to show as sender
-- `-appIcon URL` - URL of image to display as app icon (⚠️ Limited by macOS - see Limitations)
+- `-appIcon URL` - URL of image to display as app icon (⚠️ Deprecated - use custom app bundles)
 - `-contentImage URL` - URL of image to display in notification
 - `-open URL` - URL to open when notification is clicked
 - `-execute COMMAND` - Shell command to execute when clicked
@@ -218,15 +218,25 @@ Copyright © 2012-2024 Eloy Durán, Julien Blanchard. All rights reserved.
 
 See [LICENSE.md](LICENSE.md) for details.
 
+## Deprecated Options
+
+### App Icon and Sender Options
+⚠️ **The `-appIcon` and `-sender` options are deprecated** and no longer work on modern macOS:
+
+- **Reason**: These options worked on older macOS versions but were removed/deprecated in newer versions
+- **Current behavior**: These options show deprecation warnings and store values in userInfo only
+- **Alternative**: Use custom app bundles with `make app-with-icon ICON_PATH=/path/to/icon.icns`
+- **Content images**: Use `-contentImage` for notification content images (still works)
+
 ## Limitations
 
 ### App Icon Customization
-⚠️ **Custom app icons are not fully supported on macOS** due to system limitations:
+⚠️ **Custom app icons are not supported in notifications** due to macOS system limitations:
 
-- **NSUserNotificationCenter**: Does not support custom app icons at all
+- **NSUserNotificationCenter**: Does not support custom app icons
 - **UserNotifications**: Does not support custom app icons (app icon is always the app bundle's icon)
-- **Workaround**: Use `-contentImage` for visual customization instead of `-appIcon`
-- **Note**: The `-appIcon` option is provided for compatibility but will not change the actual app icon
+- **Workaround**: Use custom app bundles with different icons
+- **Content images**: Use `-contentImage` for visual customization
 
 ### Framework Selection
 - **UserNotifications**: Modern framework with better features but may have permission issues in command-line apps
