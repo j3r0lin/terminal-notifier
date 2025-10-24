@@ -57,7 +57,7 @@ module TerminalNotifier
     if options[:reply] || options['reply'] || always_string
       result
     else
-      result.length == 0 || result.downcase.gsub(/\W+/,'_').to_sym
+      result.nil? || result.length == 0 || result.downcase.gsub(/\W+/,'_').to_sym
     end
   end
   module_function :notify_result
@@ -112,11 +112,12 @@ module TerminalNotifier
 
     require 'time'
     notifications = output.split("\n")[1..-1].map do |line|
+      next if line.strip.empty?
       LIST_FIELDS.zip(line.split("\t")).inject({}) do |hash, (key, value)|
-        hash[key] = key == :delivered_at ? Time.parse(value) : (value unless value == '(null)')
+        hash[key] = key == :delivered_at ? (value && !value.empty? ? Time.parse(value) : nil) : (value unless value == '(null)')
         hash
       end
-    end
+    end.compact
 
     group == 'ALL' ? notifications : notifications.first
   end

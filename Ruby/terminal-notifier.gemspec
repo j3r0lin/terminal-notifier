@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-plist = File.expand_path('../../Terminal Notifier/Terminal Notifier-Info.plist', __FILE__)
+plist = File.expand_path('../vendor/terminal-notifier/terminal-notifier.app/Contents/Info.plist', __FILE__)
 # Also run on non-OSX machines, otherwise bundle installs directly from the repo will fail.
 # version = `/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' '#{plist}'`.strip
 version = File.read(plist).match(%r{<string>(\d+\.\d+\.\d+)</string>})[1]

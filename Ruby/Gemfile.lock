@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    terminal-notifier (1.5.1)
+    terminal-notifier (3.0.0)
 
 GEM
   remote: https://rubygems.org/
@@ -12,6 +12,7 @@ GEM
       metaclass (~> 0.0.1)
     mocha-on-bacon (0.2.0)
       mocha (>= 0.9.8)
+    rake (13.3.0)
 
 PLATFORMS
   ruby
@@ -20,4 +21,8 @@ DEPENDENCIES
   bacon
   mocha
   mocha-on-bacon
+  rake
   terminal-notifier!
+
+BUNDLED WITH
+   1.17.2
