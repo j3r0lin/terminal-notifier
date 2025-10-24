@@ -156,7 +156,7 @@ class NotificationManager: NSObject {
         print("                          Old notifications with the same ID will be removed.")
         print("       -activate ID       The bundle identifier of the application to activate when the user clicks the notification.")
         print("       -sender ID         The bundle identifier of the application that should be shown as the sender, including its icon.")
-        print("       -appIcon URL       The URL of a image to display instead of the application icon (Mavericks+ only)")
+        print("       -appIcon URL       The URL of a image to display instead of the application icon (⚠️ Limited by macOS)")
         print("       -contentImage URL  The URL of a image to display attached to the notification (Mavericks+ only)")
         print("       -open URL          The URL of a resource to open when the user clicks the notification.")
         print("       -execute COMMAND   A shell command to perform when the user clicks the notification.")

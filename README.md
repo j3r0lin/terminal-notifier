@@ -11,7 +11,7 @@ terminal-notifier is a command-line tool to send macOS User Notifications, writt
 - Group notifications and remove previous ones
 - Open URLs or activate applications when clicked
 - Execute shell commands when notifications are clicked
-- Support for custom app icons and content images
+- Support for content images (app icons are limited by macOS)
 - Bypass Do Not Disturb mode
 - List and remove existing notifications
 - Debug mode for troubleshooting
@@ -36,6 +36,47 @@ gem install terminal-notifier
 
 ```bash
 brew install terminal-notifier
+```
+
+## Custom Icon Builds
+
+Since macOS doesn't support custom app icons in notifications, you can build app bundles with custom icons instead:
+
+### Build with Custom Icon
+
+```bash
+# Build with your own icon file
+make app-with-icon ICON_PATH=/path/to/your/icon.icns
+
+# Build with Firefox icon
+make app-firefox
+
+# Build with Terminal icon  
+make app-terminal
+
+# Build with icon from URL
+make app-icon-url ICON_URL=https://example.com/icon.png
+```
+
+### Manual Build with Custom Icon
+
+```bash
+# Use the build script directly
+./scripts/build_with_icon.sh /path/to/icon.icns my-custom-notifier
+
+# The script supports .icns, .png, .jpg, .jpeg files
+# It will automatically convert non-ICNS files to ICNS format
+```
+
+### Using Custom Icon App Bundles
+
+```bash
+# Use your custom app bundle
+./my-custom-notifier.app/Contents/MacOS/terminal-notifier \
+  -message "Hello from custom app!" \
+  -title "Custom Icon Test"
+
+# All notifications will use your custom icon
 ```
 
 ## Usage
@@ -70,7 +111,7 @@ terminal-notifier -[message|list|remove] [VALUE|ID|ID] [options]
 - `-group ID` - Group identifier (removes old notifications with same ID)
 - `-activate ID` - Bundle identifier of app to activate when clicked
 - `-sender ID` - Bundle identifier of app to show as sender
-- `-appIcon URL` - URL of image to display as app icon
+- `-appIcon URL` - URL of image to display as app icon (⚠️ Limited by macOS - see Limitations)
 - `-contentImage URL` - URL of image to display in notification
 - `-open URL` - URL to open when notification is clicked
 - `-execute COMMAND` - Shell command to execute when clicked
@@ -176,6 +217,21 @@ This runs a comprehensive test suite covering:
 Copyright © 2012-2024 Eloy Durán, Julien Blanchard. All rights reserved.
 
 See [LICENSE.md](LICENSE.md) for details.
+
+## Limitations
+
+### App Icon Customization
+⚠️ **Custom app icons are not fully supported on macOS** due to system limitations:
+
+- **NSUserNotificationCenter**: Does not support custom app icons at all
+- **UserNotifications**: Does not support custom app icons (app icon is always the app bundle's icon)
+- **Workaround**: Use `-contentImage` for visual customization instead of `-appIcon`
+- **Note**: The `-appIcon` option is provided for compatibility but will not change the actual app icon
+
+### Framework Selection
+- **UserNotifications**: Modern framework with better features but may have permission issues in command-line apps
+- **NSUserNotificationCenter**: Legacy framework with reliable delivery but limited features
+- **Auto-selection**: The tool automatically chooses the best framework based on features used
 
 ## Contributing
 

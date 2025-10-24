@@ -78,6 +78,51 @@ check-signature:
 		echo "App bundle not found. Run 'make app' first."; \
 	fi
 
+# Custom icon build targets
+app-with-icon:
+	@echo "Building app bundle with custom icon..."
+	@echo "Usage: make app-with-icon ICON_PATH=/path/to/icon.icns [OUTPUT_NAME=custom-name]"
+	@if [ -z "$(ICON_PATH)" ]; then \
+		echo "❌ ICON_PATH is required"; \
+		echo "Example: make app-with-icon ICON_PATH=/path/to/icon.icns"; \
+		exit 1; \
+	fi
+	@./scripts/build_with_icon.sh "$(ICON_PATH)" "$(OUTPUT_NAME)"
+
+# Build with Firefox icon
+app-firefox: build
+	@echo "Building app bundle with Firefox icon..."
+	@if [ -f "/Applications/Firefox.app/Contents/Resources/firefox.icns" ]; then \
+		./scripts/build_with_icon.sh "/Applications/Firefox.app/Contents/Resources/firefox.icns" "terminal-notifier-firefox"; \
+	else \
+		echo "❌ Firefox not found at /Applications/Firefox.app/Contents/Resources/firefox.icns"; \
+		exit 1; \
+	fi
+
+# Build with Terminal icon
+app-terminal: build
+	@echo "Building app bundle with Terminal icon..."
+	@if [ -f "/System/Applications/Utilities/Terminal.app/Contents/Resources/Terminal.icns" ]; then \
+		./scripts/build_with_icon.sh "/System/Applications/Utilities/Terminal.app/Contents/Resources/Terminal.icns" "terminal-notifier-terminal"; \
+	else \
+		echo "❌ Terminal not found at /System/Applications/Utilities/Terminal.app/Contents/Resources/Terminal.icns"; \
+		exit 1; \
+	fi
+
+# Build with custom icon from URL
+app-icon-url:
+	@echo "Building app bundle with custom icon from URL..."
+	@echo "Usage: make app-icon-url ICON_URL=https://example.com/icon.png [OUTPUT_NAME=custom-name]"
+	@if [ -z "$(ICON_URL)" ]; then \
+		echo "❌ ICON_URL is required"; \
+		echo "Example: make app-icon-url ICON_URL=https://example.com/icon.png"; \
+		exit 1; \
+	fi
+	@TEMP_ICON=$$(mktemp /tmp/icon.XXXXXX.$$(echo "$(ICON_URL)" | sed 's/.*\.//')); \
+	curl -s "$(ICON_URL)" -o "$$TEMP_ICON" && \
+	./scripts/build_with_icon.sh "$$TEMP_ICON" "$(OUTPUT_NAME)" && \
+	rm -f "$$TEMP_ICON"
+
 # Run tests
 test: test-unit test-integration test-options test-build
 
@@ -189,6 +234,13 @@ help:
 	@echo "  sign         - Sign the app bundle"
 	@echo "  app-signed   - Create and sign app bundle"
 	@echo "  check-signature - Check app signature"
+	@echo ""
+	@echo "Custom icon build targets:"
+	@echo "  app-with-icon  - Build app bundle with custom icon (requires ICON_PATH)"
+	@echo "  app-firefox    - Build app bundle with Firefox icon"
+	@echo "  app-terminal   - Build app bundle with Terminal icon"
+	@echo "  app-icon-url   - Build app bundle with icon from URL (requires ICON_URL)"
+	@echo ""
 	@echo "  test         - Run complete test suite"
 	@echo "  test-quick   - Run quick unit tests only"
 	@echo "  test-ci      - Run CI tests (no warnings)"
