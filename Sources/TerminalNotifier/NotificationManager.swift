@@ -31,6 +31,15 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate, NSUserNot
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         
+        // Check for features not supported in UserNotifications
+        if let ignoreDnD = options["ignoreDnD"] as? Bool, ignoreDnD {
+            if DEBUG_MODE { print("DEBUG: ignoreDnD not supported in UserNotifications, falling back to NSUserNotificationCenter") }
+            DispatchQueue.main.async {
+                self.deliverNotificationFallback(title: title, subtitle: subtitle, message: message, options: options, sound: sound)
+            }
+            return true
+        }
+        
         // Check authorization status first
         center.getNotificationSettings { settings in
             if settings.authorizationStatus == .authorized {
@@ -73,10 +82,49 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate, NSUserNot
         userInfo["originalMessage"] = message
         content.userInfo = userInfo
         
+        // Set app icon if provided
+        if let appIconURL = options["appIcon"] as? String,
+           let _ = URL(string: appIconURL) {
+            // UserNotifications doesn't have direct appIcon support, but we can store it in userInfo
+            userInfo["appIcon"] = appIconURL
+            content.userInfo = userInfo
+        }
+        
+        // Set content image if provided
+        if let contentImageURL = options["contentImage"] as? String,
+           let url = URL(string: contentImageURL) {
+            // UserNotifications supports attachments for content images
+            if #available(macOS 10.14, *) {
+                // Try to create an attachment for the content image
+                if let attachment = createAttachment(from: url) {
+                    content.attachments = [attachment]
+                } else {
+                    // Fallback: store in userInfo for delegate handling
+                    userInfo["contentImage"] = contentImageURL
+                    content.userInfo = userInfo
+                }
+            }
+        }
+        
+        // Set sender if provided
+        if let sender = options["sender"] as? String {
+            userInfo["sender"] = sender
+            content.userInfo = userInfo
+        }
+        
+        // Set activate app if provided
+        if let bundleID = options["bundleID"] as? String {
+            userInfo["bundleID"] = bundleID
+            content.userInfo = userInfo
+        }
+        
         // Set category for actions if needed
         if options["open"] != nil || options["command"] != nil || options["bundleID"] != nil {
             content.categoryIdentifier = "TERMINAL_NOTIFIER_ACTIONS"
         }
+        
+        // Note: ignoreDnD is not directly supported in UserNotifications framework
+        // It's handled at the system level and cannot be overridden programmatically
         
         // Create request with identifier
         let identifier = options["groupID"] as? String ?? UUID().uuidString
@@ -305,6 +353,35 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate, NSUserNot
     }
     
     // MARK: - Helper Methods
+    private func createAttachment(from url: URL) -> UNNotificationAttachment? {
+        if #available(macOS 10.14, *) {
+            do {
+                // Download the image data
+                let data = try Data(contentsOf: url)
+                
+                // Create a temporary file
+                let tempDir = FileManager.default.temporaryDirectory
+                let tempFile = tempDir.appendingPathComponent(UUID().uuidString + ".tmp")
+                
+                try data.write(to: tempFile)
+                
+                // Create the attachment
+                let attachment = try UNNotificationAttachment(identifier: "content-image", url: tempFile, options: nil)
+                
+                // Clean up the temp file after a delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+                    try? FileManager.default.removeItem(at: tempFile)
+                }
+                
+                return attachment
+            } catch {
+                if DEBUG_MODE { print("DEBUG: Failed to create attachment from URL: \(error)") }
+                return nil
+            }
+        }
+        return nil
+    }
+    
     private func activateApp(bundleID: String) {
         let runningApps = NSWorkspace.shared.runningApplications
         for app in runningApps {
