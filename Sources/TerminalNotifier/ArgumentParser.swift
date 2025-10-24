@@ -113,6 +113,12 @@ class ArgumentParser {
             case "--debug":
                 DEBUG_MODE = true
                 
+            case "-useUserNotifications", "--useUserNotifications":
+                options["useUserNotifications"] = true
+                
+            case "-useNSUserNotificationCenter", "--useNSUserNotificationCenter":
+                options["useNSUserNotificationCenter"] = true
+                
             default:
                 break
             }
@@ -155,6 +161,10 @@ class ArgumentParser {
                 options: options,
                 sound: sound
             )
+        } else {
+            // No message provided, show help and exit
+            notificationManager.printHelpBanner()
+            exit(0)
         }
     }
 }

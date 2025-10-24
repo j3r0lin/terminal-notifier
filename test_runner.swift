@@ -1,6 +1,7 @@
 #!/usr/bin/env swift
 
 import Foundation
+import AppKit
 import UserNotifications
 
 // Simple test framework for command-line testing
@@ -235,6 +236,82 @@ func runTests() {
                openURL == "https://www.apple.com" &&
                command == "echo 'Hello World'" &&
                ignoreDnD == true
+    }
+    
+    // Test image file validation - valid paths
+    runner.addTest("Image file validation - valid paths") {
+        let validImagePaths = [
+            "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AlertNoteIcon.icns",
+            "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns",
+            "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericDocumentIcon.icns"
+        ]
+        
+        for path in validImagePaths {
+            if !FileManager.default.fileExists(atPath: path) {
+                return false
+            }
+        }
+        return true
+    }
+    
+    // Test image file validation - invalid paths
+    runner.addTest("Image file validation - invalid paths") {
+        let invalidImagePaths = [
+            "/nonexistent/path/image.icns",
+            "/System/Library/nonexistent.icns",
+            "/tmp/nonexistent_image.png"
+        ]
+        
+        for path in invalidImagePaths {
+            if FileManager.default.fileExists(atPath: path) {
+                return false
+            }
+        }
+        return true
+    }
+    
+    // Test NSImage creation from valid paths
+    runner.addTest("NSImage creation from valid paths") {
+        let validImagePath = "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AlertNoteIcon.icns"
+        
+        if let image = NSImage(contentsOfFile: validImagePath) {
+            return image.size.width > 0 && image.size.height > 0
+        }
+        return false
+    }
+    
+    // Test NSImage creation from invalid paths
+    runner.addTest("NSImage creation from invalid paths") {
+        let invalidImagePath = "/nonexistent/path/image.icns"
+        
+        if let _ = NSImage(contentsOfFile: invalidImagePath) {
+            return false // Should not create image from invalid path
+        }
+        return true
+    }
+    
+    // Test URL creation for image paths
+    runner.addTest("URL creation for image paths") {
+        let filePath = "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AlertNoteIcon.icns"
+        let httpURL = "https://example.com/image.png"
+        
+        let fileURL = URL(fileURLWithPath: filePath)
+        let webURL = URL(string: httpURL)
+        
+        return fileURL.path == filePath && webURL?.absoluteString == httpURL
+    }
+    
+    // Test image options in notification dictionary
+    runner.addTest("Image options in notification dictionary") {
+        let options: [String: Any] = [
+            "contentImage": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AlertNoteIcon.icns",
+            "appIcon": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns"
+        ]
+        
+        let contentImage = options["contentImage"] as? String
+        let appIcon = options["appIcon"] as? String
+        
+        return contentImage != nil && appIcon != nil
     }
     
     runner.runAll()
