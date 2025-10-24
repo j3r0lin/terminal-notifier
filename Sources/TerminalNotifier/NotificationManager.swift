@@ -167,6 +167,28 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate, NSUserNot
             }
         }
         
+        // Set content image if provided
+        if let contentImageURL = options["contentImage"] as? String,
+           let url = URL(string: contentImageURL) {
+            notification.contentImage = NSImage(contentsOf: url)
+        }
+        
+        // Set app icon if provided (NSUserNotification doesn't have appIcon property)
+        if let appIconURL = options["appIcon"] as? String {
+            // Store in userInfo for potential future use
+            var userInfo = notification.userInfo ?? [:]
+            userInfo["appIcon"] = appIconURL
+            notification.userInfo = userInfo
+        }
+        
+        // Set sender if provided (NSUserNotification doesn't have sender property)
+        if let sender = options["sender"] as? String {
+            // Store in userInfo for potential future use
+            var userInfo = notification.userInfo ?? [:]
+            userInfo["sender"] = sender
+            notification.userInfo = userInfo
+        }
+        
         // Set Do Not Disturb override if provided
         if let ignoreDnD = options["ignoreDnD"] as? Bool, ignoreDnD {
             notification.setValue(true, forKey: "_ignoresDoNotDisturb")
