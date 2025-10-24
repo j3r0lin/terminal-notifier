@@ -168,6 +168,9 @@ if command -v codesign >/dev/null 2>&1; then
         print_warning "Code signing failed - app will be unsigned"
 else
     print_warning "codesign not available - app will be unsigned"
+    print_warning "To enable signing, install Xcode Command Line Tools:"
+    print_warning "  xcode-select --install"
+    print_warning "Then run this script again."
 fi
 
 # Test the app bundle

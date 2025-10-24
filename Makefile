@@ -45,6 +45,8 @@ app: build
 		echo "❌ Code signing failed - continuing without signature"; \
 	else \
 		echo "⚠️  codesign not available - app will be unsigned"; \
+		echo "   To enable signing, install Xcode Command Line Tools:"; \
+		echo "   xcode-select --install"; \
 	fi
 
 # Create unsigned app bundle
@@ -63,6 +65,8 @@ sign: app
 		echo "❌ Code signing failed - continuing without signature"; \
 	else \
 		echo "⚠️  codesign not available - app will be unsigned"; \
+		echo "   To enable signing, install Xcode Command Line Tools:"; \
+		echo "   xcode-select --install"; \
 	fi
 
 # Create signed app bundle

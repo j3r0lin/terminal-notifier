@@ -68,6 +68,26 @@ make app-icon-url ICON_URL=https://example.com/icon.png
 # It will automatically convert non-ICNS files to ICNS format
 ```
 
+### Signing Requirements
+
+**For custom app bundles, you need:**
+- **Xcode Command Line Tools** (for `codesign` command)
+- **No developer account required** - uses ad-hoc signing
+- **macOS system** - signing only works on macOS
+
+The build process automatically signs the app bundle with **ad-hoc signing**, which doesn't require specific developer credentials but is necessary for macOS to recognize the app bundle properly. This means anyone can build custom app bundles without needing an Apple Developer account.
+
+**If you don't have Xcode Command Line Tools:**
+```bash
+# Install Xcode Command Line Tools
+xcode-select --install
+
+# Then build your custom app bundle
+make app-with-icon ICON_PATH=/path/to/your/icon.icns
+```
+
+For detailed information about code signing, see [SIGNING_GUIDE.md](SIGNING_GUIDE.md).
+
 ### Using Custom Icon App Bundles
 
 ```bash
