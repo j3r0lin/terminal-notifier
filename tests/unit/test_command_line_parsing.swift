@@ -79,25 +79,21 @@ assert(subtitle == "Subtitle")
 assert(sound == "default")
 print("✅ Optional arguments")
 
-// Test 4: Framework selection flags
-print("4. Testing framework selection flags...")
-let frameworkArgs = ["terminal-notifier", "-message", "Test", "-useUserNotifications"]
-var useUserNotifications = false
-var useNSUserNotificationCenter = false
+// Test 4: Content image handling
+print("4. Testing content image handling...")
+let contentImageArgs = ["terminal-notifier", "-message", "Test", "-contentImage", "/path/to/image.png"]
+var hasContentImage = false
 
-for arg in frameworkArgs {
+for arg in contentImageArgs {
     switch arg {
-    case "-useUserNotifications", "--useUserNotifications":
-        useUserNotifications = true
-    case "-useNSUserNotificationCenter", "--useNSUserNotificationCenter":
-        useNSUserNotificationCenter = true
+    case "-contentImage":
+        hasContentImage = true
     default:
         break
     }
 }
 
-assert(useUserNotifications == true)
-assert(useNSUserNotificationCenter == false)
-print("✅ Framework selection flags")
+assert(hasContentImage == true)
+print("✅ Content image handling")
 
 print("\nAll command line parsing tests passed! 🎉")

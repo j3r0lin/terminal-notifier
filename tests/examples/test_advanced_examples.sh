@@ -30,37 +30,30 @@ else
     echo "⚠️  Firefox not found, skipping Firefox icon example"
 fi
 
-# Example 4: Explicit framework selection
+# Example 4: Notification with custom sound
 echo ""
-echo "Example 4: Explicit NSUserNotificationCenter selection"
-echo "Command: $BINARY -message \"NSUserNotificationCenter test\" -title \"Framework Test\" -useNSUserNotificationCenter"
-$BINARY -message "NSUserNotificationCenter test" -title "Framework Test" -useNSUserNotificationCenter > /dev/null 2>&1
-echo "✅ NSUserNotificationCenter explicit selection sent"
+echo "Example 4: Notification with custom sound"
+echo "Command: $BINARY -message \"Custom sound test\" -title \"Sound Test\" -sound \"Glass\""
+$BINARY -message "Custom sound test" -title "Sound Test" -sound "Glass" > /dev/null 2>&1
+echo "✅ Custom sound notification sent"
 
-# Example 5: Explicit UserNotifications selection (may fail due to permissions)
+# Example 5: Notification with URL opening
 echo ""
-echo "Example 5: Explicit UserNotifications selection"
-echo "Command: $BINARY -message \"UserNotifications test\" -title \"Framework Test\" -useUserNotifications"
-$BINARY -message "UserNotifications test" -title "Framework Test" -useUserNotifications > /dev/null 2>&1
-echo "✅ UserNotifications explicit selection sent (may have fallen back to NSUserNotificationCenter)"
-
-# Example 6: Notification with URL opening
-echo ""
-echo "Example 6: Notification with URL opening"
+echo "Example 5: Notification with URL opening"
 echo "Command: $BINARY -message \"Click to open website\" -title \"URL Test\" -open \"https://github.com/julienXX/terminal-notifier\""
 $BINARY -message "Click to open website" -title "URL Test" -open "https://github.com/julienXX/terminal-notifier" > /dev/null 2>&1
 echo "✅ URL opening notification sent"
 
-# Example 7: Notification with command execution
+# Example 6: Notification with command execution
 echo ""
-echo "Example 7: Notification with command execution"
+echo "Example 6: Notification with command execution"
 echo "Command: $BINARY -message \"Click to execute command\" -title \"Command Test\" -execute \"echo 'Command executed'\""
 $BINARY -message "Click to execute command" -title "Command Test" -execute "echo 'Command executed'" > /dev/null 2>&1
 echo "✅ Command execution notification sent"
 
 # Example 8: Notification with app activation
 echo ""
-echo "Example 8: Notification with app activation"
+echo "Example 7: Notification with app activation"
 echo "Command: $BINARY -message \"Click to activate app\" -title \"Activation Test\" -activate \"com.apple.finder\""
 $BINARY -message "Click to activate app" -title "Activation Test" -activate "com.apple.finder" > /dev/null 2>&1
 echo "✅ App activation notification sent"

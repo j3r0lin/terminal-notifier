@@ -59,23 +59,6 @@ class ArgumentParser {
                     i += 1
                 }
                 
-            case "-sender":
-                if i + 1 < arguments.count {
-                    options["sender"] = arguments[i + 1]
-                    print("⚠️  Warning: -sender option is deprecated and no longer works on modern macOS.")
-                    print("   Use custom app bundles instead: make app-with-icon ICON_PATH=/path/to/icon.icns")
-                    i += 1
-                }
-                
-            case "-appIcon":
-                if i + 1 < arguments.count {
-                    options["appIcon"] = arguments[i + 1]
-                    print("⚠️  Warning: -appIcon option is deprecated and no longer works on modern macOS.")
-                    print("   Use custom app bundles instead: make app-with-icon ICON_PATH=/path/to/icon.icns")
-                    print("   Or use -contentImage for notification content images.")
-                    i += 1
-                }
-                
             case "-contentImage":
                 if i + 1 < arguments.count {
                     options["contentImage"] = arguments[i + 1]
@@ -117,12 +100,6 @@ class ArgumentParser {
                 
             case "--debug":
                 DEBUG_MODE = true
-                
-            case "-useUserNotifications", "--useUserNotifications":
-                options["useUserNotifications"] = true
-                
-            case "-useNSUserNotificationCenter", "--useNSUserNotificationCenter":
-                options["useNSUserNotificationCenter"] = true
                 
             default:
                 break

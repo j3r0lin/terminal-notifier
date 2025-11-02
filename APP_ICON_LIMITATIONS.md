@@ -2,36 +2,20 @@
 
 ## Summary
 
-After thorough investigation of both macOS notification frameworks, **custom app icons are not supported** in macOS notifications due to fundamental system limitations.
+After thorough investigation of the macOS notification system, **custom app icons are not supported** in macOS notifications due to fundamental system limitations.
 
-## Framework Analysis
+## System Analysis
 
-### 1. NSUserNotificationCenter (Legacy Framework)
+### macOS Notification System
 - ❌ **No app icon customization support**
-- ❌ No `appIcon` property in `NSUserNotification`
-- ✅ Supports `contentImage` for notification content
-- ✅ Reliable delivery for command-line apps
-
-### 2. UserNotifications (Modern Framework)
-- ❌ **No app icon customization support**
-- ❌ No `appIcon` property in `UNMutableNotificationContent`
+- ❌ No `appIcon` property in notification content
 - ✅ Supports `attachments` for notification content
 - ⚠️ Permission issues with command-line apps
 
 ## Technical Details
 
-### NSUserNotification Properties
-```swift
-let notification = NSUserNotification()
-// Available properties:
-notification.title = "Title"
-notification.subtitle = "Subtitle"
-notification.informativeText = "Message"
-notification.contentImage = NSImage()  // ✅ Content image only
-// ❌ No appIcon property exists
-```
 
-### UNMutableNotificationContent Properties
+### Notification Content Properties
 ```swift
 let content = UNMutableNotificationContent()
 // Available properties:
@@ -44,11 +28,10 @@ content.attachments = [attachment]  // ✅ Content images only
 
 ## What Actually Happens
 
-When you use `-appIcon` in terminal-notifier:
+When you try to use custom app icons in terminal-notifier:
 
-1. **NSUserNotificationCenter**: Stores the icon path in `userInfo` but displays the app bundle's icon
-2. **UserNotifications**: Stores the icon path in `userInfo` but displays the app bundle's icon
-3. **Result**: The notification always shows the terminal-notifier app icon, not the custom icon
+1. **UserNotifications**: Does not support custom app icons at all
+2. **Result**: The notification always shows the terminal-notifier app icon, not any custom icon
 
 ## Workarounds
 
@@ -117,4 +100,4 @@ Create multiple app bundles with different icons for different use cases:
 
 The `-appIcon` option in terminal-notifier is provided for compatibility with the original Ruby version, but it does not actually change the app icon due to macOS system limitations. This is a fundamental constraint of the macOS notification system, not a bug in terminal-notifier.
 
-For visual customization, use `-contentImage` instead, which works reliably on both notification frameworks.
+For visual customization, use `-contentImage` instead, which works reliably with the UserNotifications framework.

@@ -16,7 +16,7 @@ class UserNotificationsManager: NSObject, UNUserNotificationCenterDelegate {
     
     // MARK: - Public Methods
     
-    /// Attempts to deliver a notification using the UserNotifications framework
+    /// Attempts to deliver a notification
     /// - Parameters:
     ///   - title: Notification title
     ///   - subtitle: Notification subtitle (optional)
@@ -27,9 +27,9 @@ class UserNotificationsManager: NSObject, UNUserNotificationCenterDelegate {
     func deliverNotification(title: String, subtitle: String?, message: String, options: [String: Any], sound: String?) -> Bool {
         if DEBUG_MODE { print("DEBUG: UserNotificationsManager - Attempting to deliver notification") }
         
-        // Check for features not supported in UserNotifications
+        // Check for features not supported
         if options["ignoreDnD"] as? Bool == true {
-            if DEBUG_MODE { print("DEBUG: UserNotificationsManager - ignoreDnD not supported in UserNotifications") }
+            if DEBUG_MODE { print("DEBUG: UserNotificationsManager - ignoreDnD not supported") }
             return false
         }
         
@@ -113,18 +113,7 @@ class UserNotificationsManager: NSObject, UNUserNotificationCenterDelegate {
         // Set user info
         var userInfo: [String: Any] = [:]
         
-        // Store app icon in userInfo (UserNotifications doesn't support custom app icons directly)
-        if let appIcon = options["appIcon"] as? String {
-            userInfo["appIcon"] = appIcon
-            if DEBUG_MODE { print("DEBUG: UserNotificationsManager - App icon stored in userInfo: \(appIcon)") }
-        }
-        
-        // Store sender in userInfo
-        if let sender = options["sender"] as? String {
-            userInfo["sender"] = sender
-        }
-        
-        // Store other options
+        // Store options in userInfo
         if let bundleID = options["bundleID"] as? String {
             userInfo["bundleID"] = bundleID
         }
@@ -293,8 +282,8 @@ class UserNotificationsManager: NSObject, UNUserNotificationCenterDelegate {
     private func executeShellCommand(_ command: String) {
         if DEBUG_MODE { print("DEBUG: UserNotificationsManager - Executing command: \(command)") }
         let task = Process()
-        task.launchPath = "/bin/bash"
+        task.executableURL = URL(fileURLWithPath: "/bin/bash")
         task.arguments = ["-c", command]
-        task.launch()
+        try? task.run()
     }
 }

@@ -48,14 +48,11 @@ Since macOS doesn't support custom app icons in notifications, you can build app
 # Build with your own icon file
 make app-with-icon ICON_PATH=/path/to/your/icon.icns
 
-# Build with Firefox icon
-make app-firefox
-
-# Build with Terminal icon  
-make app-terminal
-
 # Build with icon from URL
 make app-icon-url ICON_URL=https://example.com/icon.png
+
+# Default build includes Terminal icon
+make app
 ```
 
 ### Manual Build with Custom Icon
@@ -130,8 +127,6 @@ terminal-notifier -[message|list|remove] [VALUE|ID|ID] [options]
 - `-sound NAME` - Sound to play (use 'default' for default sound)
 - `-group ID` - Group identifier (removes old notifications with same ID)
 - `-activate ID` - Bundle identifier of app to activate when clicked
-- `-sender ID` - Bundle identifier of app to show as sender
-- `-appIcon URL` - URL of image to display as app icon (⚠️ Deprecated - use custom app bundles)
 - `-contentImage URL` - URL of image to display in notification
 - `-open URL` - URL to open when notification is clicked
 - `-execute COMMAND` - Shell command to execute when clicked
@@ -156,7 +151,6 @@ echo "Piped Message Data!" | ./terminal-notifier.app/Contents/MacOS/terminal-not
   -title "Project Update" \
   -subtitle "Build Complete" \
   -message "Version 2.1.0 is ready" \
-  -appIcon "https://example.com/icon.png" \
   -open "https://github.com/your-repo"
 ```
 
@@ -223,14 +217,92 @@ This runs a comprehensive test suite covering:
 - Data structure operations
 - File operations
 
-## Differences from Objective-C Version
+## Migration from Objective-C Version
 
-- **Native Swift implementation** - No Objective-C dependencies
-- **Better error handling** - More robust error management
-- **Debug mode** - `--debug` flag for troubleshooting
-- **Cleaner code structure** - Separated concerns into multiple files
-- **Comprehensive testing** - Full test suite included
-- **Modern Swift features** - Uses Swift 5.7+ features
+This Swift rewrite provides improved functionality while maintaining compatibility with the original Objective-C version. Here's what changed:
+
+### Feature Comparison
+
+| Feature | Objective-C Version | Swift Version | Status |
+|---------|---------------------|---------------|--------|
+| **Core Functionality** |
+| Basic notifications | ✅ | ✅ | **Maintained** |
+| Title, subtitle, message | ✅ | ✅ | **Maintained** |
+| Custom sounds | ✅ | ✅ | **Maintained** |
+| Group notifications | ✅ | ✅ | **Maintained** |
+| Remove notifications | ✅ | ✅ | **Maintained** |
+| List notifications | ✅ | ✅ | **Maintained** |
+| **User Interaction** |
+| Open URLs on click | ✅ | ✅ | **Maintained** |
+| Activate apps on click | ✅ | ✅ | **Maintained** |
+| Execute commands on click | ✅ | ✅ | **Maintained** |
+| **Images** |
+| Content images (`-contentImage`) | ✅ | ✅ | **Maintained** |
+| Custom app icon (`-appIcon`) | ⚠️ Worked on older macOS | ❌ Removed | **Removed** (macOS limitation) |
+| Sender icon (`-sender`) | ⚠️ Worked on older macOS | ❌ Removed | **Removed** (macOS limitation) |
+| **Advanced Features** |
+| Do Not Disturb bypass | ✅ | ✅ | **Maintained** |
+| Debug mode (`--debug`) | ❌ | ✅ | **New** |
+| Piped input | ✅ | ✅ | **Maintained** |
+| Custom icon app bundles | ❌ | ✅ | **New** (workaround for removed options) |
+| **Framework** |
+| Notification framework | NSUserNotificationCenter (legacy) | UserNotifications (modern) | **Upgraded** |
+| **Code Quality** |
+| Error handling | Basic | Improved | **Enhanced** |
+| Code structure | Single file | Modular | **Improved** |
+| Testing | Minimal | Comprehensive | **Enhanced** |
+
+### Key Changes
+
+#### ✅ **Improvements**
+
+1. **Modern Framework**: Uses `UserNotifications` framework instead of deprecated `NSUserNotificationCenter`
+   - Better permission handling
+   - More reliable on modern macOS
+   - Supports future notification features
+
+2. **Debug Mode**: New `--debug` flag for troubleshooting
+   - Detailed debug output
+   - Helps diagnose permission issues
+   - Useful for development
+
+3. **Custom Icon Builds**: New workaround for app icon customization
+   - Build app bundles with custom icons
+   - Terminal icon is default
+   - Supports any icon format
+
+4. **Better Code Structure**: Modular design with separated concerns
+   - Easier to maintain
+   - Better error handling
+   - Comprehensive test suite
+
+#### ⚠️ **Breaking Changes**
+
+1. **Removed `-appIcon` option**: No longer supported due to macOS limitations
+   - **Workaround**: Use custom icon app bundles (`make app-with-icon`)
+
+2. **Removed `-sender` option**: No longer supported due to macOS limitations
+   - **Workaround**: Build custom app bundles with desired icon
+
+3. **Framework Change**: Uses modern `UserNotifications` framework
+   - May require permission prompts on first use
+   - Better compatibility with modern macOS
+
+#### 📋 **Migration Guide**
+
+**For scripts using `-appIcon` or `-sender`:**
+```bash
+# Old way (no longer works)
+terminal-notifier -message "Test" -appIcon "/path/to/icon.icns"
+
+# New way - use custom app bundle
+make app-with-icon ICON_PATH=/path/to/icon.icns
+./terminal-notifier-custom.app/Contents/MacOS/terminal-notifier -message "Test"
+```
+
+**For all other options:**
+- No changes needed! All other features work exactly the same.
+- Scripts using `-title`, `-message`, `-sound`, `-group`, `-open`, etc. work without modification.
 
 ## License
 
@@ -240,28 +312,22 @@ See [LICENSE.md](LICENSE.md) for details.
 
 ## Deprecated Options
 
-### App Icon and Sender Options
-⚠️ **The `-appIcon` and `-sender` options are deprecated** and no longer work on modern macOS:
-
-- **Reason**: These options worked on older macOS versions but were removed/deprecated in newer versions
-- **Current behavior**: These options show deprecation warnings and store values in userInfo only
-- **Alternative**: Use custom app bundles with `make app-with-icon ICON_PATH=/path/to/icon.icns`
-- **Content images**: Use `-contentImage` for notification content images (still works)
 
 ## Limitations
 
 ### App Icon Customization
 ⚠️ **Custom app icons are not supported in notifications** due to macOS system limitations:
 
-- **NSUserNotificationCenter**: Does not support custom app icons
-- **UserNotifications**: Does not support custom app icons (app icon is always the app bundle's icon)
+- **macOS notifications**: Do not support custom app icons (app icon is always the app bundle's icon)
 - **Workaround**: Use custom app bundles with different icons
 - **Content images**: Use `-contentImage` for visual customization
 
-### Framework Selection
-- **UserNotifications**: Modern framework with better features but may have permission issues in command-line apps
-- **NSUserNotificationCenter**: Legacy framework with reliable delivery but limited features
-- **Auto-selection**: The tool automatically chooses the best framework based on features used
+### Modern Framework
+- **Modern notifications**: Uses the latest macOS notification system with advanced capabilities
+- **Interactive notifications**: Support for action buttons and text input
+- **Rich content**: Multiple attachments, custom sounds, and enhanced formatting
+- **Smart scheduling**: Calendar-based and location-based notifications
+- **Better management**: Advanced notification grouping and management
 
 ## Contributing
 

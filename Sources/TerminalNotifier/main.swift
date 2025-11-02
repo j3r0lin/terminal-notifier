@@ -1,6 +1,5 @@
 import Foundation
 import Cocoa
-import UserNotifications
 
 // MARK: - Main Application
 class TerminalNotifierApp: NSObject, NSApplicationDelegate {
@@ -8,9 +7,6 @@ class TerminalNotifierApp: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if DEBUG_MODE { print("DEBUG: App launched, parsing arguments...") }
-
-        // Note: Delegates are now handled by the individual framework managers
-        // No need to set them here as they manage their own delegates
         
         // Parse command line arguments
         let arguments = CommandLine.arguments

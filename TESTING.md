@@ -16,7 +16,6 @@ tests/
 │   ├── test_basic_notifications.sh
 │   └── test_image_notifications.sh
 ├── frameworks/              # Framework-specific tests (Shell)
-│   ├── test_nsuser_notification_center.sh
 │   └── test_user_notifications.sh
 └── examples/                # Example tests (Shell)
     ├── test_basic_examples.sh
@@ -48,8 +47,7 @@ make test-integration-images # Image notifications
 
 #### Framework-Specific Tests
 ```bash
-make test-framework-nsuser   # NSUserNotificationCenter tests
-make test-framework-user     # UserNotifications tests
+make test-framework-user     # Notification system tests
 ```
 
 #### Example Tests
@@ -78,10 +76,10 @@ Tests core Swift functionality:
 
 #### `test_notification_frameworks.swift`
 Tests notification framework availability:
-- UserNotifications framework availability
-- NSUserNotificationCenter availability
+- Notification system availability
+- Notification system availability
 - UserNotifications types availability
-- NSUserNotification creation
+- Notification content creation
 - Image handling
 
 #### `test_command_line_parsing.swift`
@@ -89,7 +87,7 @@ Tests command line argument parsing:
 - Basic argument parsing
 - Debug flag detection
 - Optional arguments
-- Framework selection flags
+- Debug flag detection
 
 ### Integration Tests
 
@@ -111,16 +109,9 @@ Tests image notification functionality:
 
 ### Framework-Specific Tests
 
-#### `test_nsuser_notification_center.sh`
-Tests NSUserNotificationCenter framework:
-- Explicit NSUserNotificationCenter usage
-- Custom icon limitations
-- Content image support
-- Sound support
-- Group ID support
 
 #### `test_user_notifications.sh`
-Tests UserNotifications framework:
+Tests notification system:
 - Explicit UserNotifications usage
 - Permission handling
 - Fallback to NSUserNotificationCenter
@@ -153,7 +144,7 @@ Demonstrates advanced usage examples:
 The tests demonstrate both automatic and explicit framework selection:
 
 - **Automatic**: The system chooses the best framework based on features
-- **Explicit**: Use `-useUserNotifications` or `-useNSUserNotificationCenter`
+- **Modern notifications**: Uses the latest macOS notification system
 
 ### Debug Mode
 All tests support debug mode with `--debug` flag for detailed output.
@@ -179,7 +170,6 @@ swift tests/unit/test_command_line_parsing.swift
 ./tests/integration/test_image_notifications.sh
 
 # Framework tests
-./tests/frameworks/test_nsuser_notification_center.sh
 ./tests/frameworks/test_user_notifications.sh
 
 # Example tests
@@ -198,7 +188,7 @@ swift tests/unit/test_command_line_parsing.swift
 ## Troubleshooting
 
 ### UserNotifications Permission Issues
-UserNotifications tests may fail due to permission issues. This is expected for command-line apps and the tests are designed to handle this gracefully by falling back to NSUserNotificationCenter.
+Notification tests may fail due to permission issues. This is expected for command-line apps and the tests are designed to handle this gracefully.
 
 ### Image Test Failures
 If image tests fail, ensure:
