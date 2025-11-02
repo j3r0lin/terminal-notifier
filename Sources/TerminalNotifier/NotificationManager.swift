@@ -17,20 +17,31 @@ class NotificationManager: NSObject {
     ///   - options: Additional notification options
     ///   - sound: Sound name (optional)
     func deliverNotification(title: String, subtitle: String?, message: String, options: [String: Any], sound: String?) {
-        if DEBUG_MODE { print("DEBUG: NotificationManager - Delivering notification - Title: \(title), Message: \(message)") }
+        debugPrint("DEBUG: NotificationManager - Delivering notification - Title: \(title), Message: \(message)")
         
         // Remove earlier notification with the same group ID
         if let groupID = options["groupID"] as? String {
             removeNotification(groupID: groupID)
         }
         
-        _ = userNotificationsManager.deliverNotification(title: title, subtitle: subtitle, message: message, options: options, sound: sound)
+        let hasActions = (options["actions"] as? [[String: String]])?.isEmpty == false
+        
+        let delivered = userNotificationsManager.deliverNotification(title: title, subtitle: subtitle, message: message, options: options, sound: sound)
+        
+        // Schedule app termination
+        // If action buttons are present, wait longer for user interaction (10 seconds)
+        // Otherwise, exit quickly after notification is sent (1 second)
+        let timeout: TimeInterval = hasActions ? 10.0 : 1.0
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeout) {
+            debugPrint("DEBUG: NotificationManager - Exiting after notification delivery (delivered: \(delivered))")
+            exit(0)
+        }
     }
     
     /// Removes notifications with a specific group ID
     /// - Parameter groupID: The group ID to remove
     func removeNotification(groupID: String) {
-        if DEBUG_MODE { print("DEBUG: NotificationManager - Removing notifications with group ID: \(groupID)") }
+        debugPrint("DEBUG: NotificationManager - Removing notifications with group ID: \(groupID)")
         
         let center = UNUserNotificationCenter.current()
         center.getPendingNotificationRequests { requests in
@@ -45,7 +56,7 @@ class NotificationManager: NSObject {
             
             if !identifiersToRemove.isEmpty {
                 center.removePendingNotificationRequests(withIdentifiers: identifiersToRemove)
-                if DEBUG_MODE { print("DEBUG: NotificationManager - Removed \(identifiersToRemove.count) notifications") }
+                debugPrint("DEBUG: NotificationManager - Removed \(identifiersToRemove.count) notifications")
             }
         }
     }
@@ -53,7 +64,7 @@ class NotificationManager: NSObject {
     /// Lists notifications with a specific group ID
     /// - Parameter groupID: The group ID to list (use "ALL" for all notifications)
     func listNotifications(groupID: String) {
-        if DEBUG_MODE { print("DEBUG: NotificationManager - Listing notifications with group ID: \(groupID)") }
+        debugPrint("DEBUG: NotificationManager - Listing notifications with group ID: \(groupID)")
         
         let center = UNUserNotificationCenter.current()
         center.getPendingNotificationRequests { requests in
@@ -77,7 +88,7 @@ class NotificationManager: NSObject {
             }
             
             if !foundAny {
-                print("No notifications found for group ID: \(groupID)")
+                errorPrint("No notifications found for group ID: \(groupID)")
             }
         }
     }
@@ -113,6 +124,15 @@ class NotificationManager: NSObject {
         print("       -execute COMMAND   A shell command to perform when the user clicks the notification.")
         print("       -ignoreDnD         Send notification even if Do Not Disturb is enabled.")
         print("       --debug            Enable debug output.")
+        print("")
+        print("   Action Buttons (macOS 11.0+):")
+        print("       -action TITLE      Add an action button with the specified title")
+        print("       -action-text TITLE Add a text input action button (user can type response)")
+        print("       -prompt TITLE      Alias for -action-text (user can reply to notification)")
+        print("       -action-destructive TITLE  Add a destructive action button (shown in red)")
+        print("       -action-icon TITLE:ICON  Add an action button with SF Symbol icon")
+        print("       (Multiple actions can be specified - output format: ACTION:identifier or ACTION:identifier:text)")
+        print("       (Text input responses are pipeable: ACTION:identifier:user_input_text)")
         print("When the user activates a notification, the results are logged to the system logs.")
         print("Use Console.app to view these logs.")
         print("")

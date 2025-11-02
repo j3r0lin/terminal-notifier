@@ -72,17 +72,58 @@ app-icon-url:
 	./scripts/build_with_icon.sh "$$TEMP_ICON" "$(OUTPUT_NAME)" && \
 	rm -f "$$TEMP_ICON"
 
+# Kill any running terminal-notifier processes
+kill-processes:
+	@echo "Killing any running terminal-notifier processes..."
+	@pkill -f "terminal-notifier" 2>/dev/null && echo "✅ Processes killed" || echo "No processes found"
+	@sleep 0.5
+
 # Quick test
-test:
+test: kill-processes
 	@echo "Running quick test..."
 	@if [ -d "terminal-notifier.app" ]; then \
 		./terminal-notifier.app/Contents/MacOS/terminal-notifier -message "Test notification" -title "Test" > /dev/null 2>&1 && \
-		echo "✅ Test notification sent successfully" || \
-		echo "❌ Test failed"; \
+		sleep 3 && \
+		echo "✅ Test notification sent successfully"; \
 	else \
 		echo "❌ App bundle not found. Run 'make app' first."; \
 		exit 1; \
 	fi
+	@$(MAKE) kill-processes
+
+# Test action buttons
+test-actions: kill-processes
+	@echo "Running action button tests..."
+	@if [ -d "terminal-notifier.app" ]; then \
+		swift tests/unit/test_action_buttons.swift && \
+		./tests/integration/test_action_buttons.sh; \
+	else \
+		echo "❌ App bundle not found. Run 'make app' first."; \
+		exit 1; \
+	fi
+	@$(MAKE) kill-processes
+
+# Test Unix tool behavior
+test-unix: kill-processes
+	@echo "Running Unix tool behavior tests..."
+	@if [ -d "terminal-notifier.app" ]; then \
+		./tests/integration/test_unix_tool_behavior.sh; \
+	else \
+		echo "❌ App bundle not found. Run 'make app' first."; \
+		exit 1; \
+	fi
+	@$(MAKE) kill-processes
+
+# Test prompt/reply functionality
+test-prompt: kill-processes
+	@echo "Running prompt/reply tests..."
+	@if [ -d "terminal-notifier.app" ]; then \
+		./tests/integration/test_prompt_reply.sh; \
+	else \
+		echo "❌ App bundle not found. Run 'make app' first."; \
+		exit 1; \
+	fi
+	@$(MAKE) kill-processes
 
 # Show help
 help:
@@ -103,6 +144,10 @@ help:
 	@echo ""
 	@echo "Other:"
 	@echo "  test           - Send a test notification"
+	@echo "  test-actions   - Run action button tests"
+	@echo "  test-unix      - Test Unix tool behavior (stdin/stdout/stderr)"
+	@echo "  test-prompt    - Test prompt/reply functionality"
+	@echo "  kill-processes - Kill any running terminal-notifier processes"
 	@echo "  help           - Show this help"
 	@echo ""
 	@echo "Examples:"
@@ -110,4 +155,4 @@ help:
 	@echo "  make app-with-icon ICON_PATH=icon.icns # Build with custom icon"
 	@echo "  make install                          # Install to /usr/local/bin"
 
-.PHONY: build debug clean app install app-with-icon app-icon-url test help
+.PHONY: build debug clean app install app-with-icon app-icon-url kill-processes test test-actions test-unix test-prompt help

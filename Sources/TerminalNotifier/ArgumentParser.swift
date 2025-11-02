@@ -71,7 +71,7 @@ class ArgumentParser {
                     if let url = URL(string: urlString), (url.scheme != nil && url.host != nil) || url.isFileURL {
                         options["open"] = urlString
                     } else {
-                        print("'\(urlString)' is not a valid URI.")
+                        errorPrint("'\(urlString)' is not a valid URI.")
                         exit(1)
                     }
                     i += 1
@@ -97,6 +97,50 @@ class ArgumentParser {
                 
             case "-ignoreDnD":
                 options["ignoreDnD"] = true
+                
+            case "-action":
+                if i + 1 < arguments.count {
+                    var actions = options["actions"] as? [[String: String]] ?? []
+                    let action: [String: String] = ["title": arguments[i + 1], "type": "default"]
+                    actions.append(action)
+                    options["actions"] = actions
+                    i += 1
+                }
+                
+            case "-action-text", "-prompt":
+                if i + 1 < arguments.count {
+                    var actions = options["actions"] as? [[String: String]] ?? []
+                    let action: [String: String] = ["title": arguments[i + 1], "type": "text"]
+                    actions.append(action)
+                    options["actions"] = actions
+                    i += 1
+                }
+                
+            case "-action-destructive":
+                if i + 1 < arguments.count {
+                    var actions = options["actions"] as? [[String: String]] ?? []
+                    let action: [String: String] = ["title": arguments[i + 1], "type": "destructive"]
+                    actions.append(action)
+                    options["actions"] = actions
+                    i += 1
+                }
+                
+            case "-action-icon":
+                if i + 1 < arguments.count {
+                    var actions = options["actions"] as? [[String: String]] ?? []
+                    let actionSpec = arguments[i + 1]
+                    let parts = actionSpec.components(separatedBy: ":")
+                    var action: [String: String] = ["type": "default"]
+                    if parts.count >= 1 {
+                        action["title"] = parts[0]
+                    }
+                    if parts.count >= 2 {
+                        action["icon"] = parts[1]
+                    }
+                    actions.append(action)
+                    options["actions"] = actions
+                    i += 1
+                }
                 
             case "--debug":
                 DEBUG_MODE = true

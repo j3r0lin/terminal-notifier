@@ -11,6 +11,8 @@ terminal-notifier is a command-line tool to send macOS User Notifications, writt
 - Group notifications and remove previous ones
 - Open URLs or activate applications when clicked
 - Execute shell commands when notifications are clicked
+- Interactive action buttons with text input support (macOS 11.0+)
+- Action buttons with SF Symbol icons (macOS 12.0+)
 - Support for content images and custom app bundles
 - Bypass Do Not Disturb mode
 - List and remove existing notifications
@@ -132,6 +134,86 @@ terminal-notifier -[message|list|remove] [VALUE|ID|ID] [options]
 - `-execute COMMAND` - Shell command to execute when clicked
 - `-ignoreDnD` - Send notification even if Do Not Disturb is enabled
 - `--debug` - Enable debug output
+- `-action TITLE` - Add an action button (macOS 11.0+)
+- `-action-text TITLE` - Add a text input action button (macOS 11.0+)
+- `-prompt TITLE` - Alias for `-action-text` (user can reply to notification)
+- `-action-destructive TITLE` - Add a destructive action button shown in red (macOS 11.0+)
+- `-action-icon TITLE:ICON` - Add an action button with SF Symbol icon (macOS 12.0+)
+
+## Unix Tool Behavior
+
+terminal-notifier follows Unix conventions for proper integration with shell scripts and pipelines:
+
+### Input/Output Streams
+
+- **stdin**: Reads notification message from pipe if `-message` is not provided
+- **stdout**: Action responses, list output, help, and version information
+- **stderr**: Debug output (`--debug`), error messages, informational messages
+
+### Exit Codes
+
+- **0**: Success (notification sent, list/remove completed)
+- **1**: Error (invalid arguments, failed operations)
+
+### Piping Examples
+
+```bash
+# Pipe message from stdin
+echo "Build complete!" | terminal-notifier -title "Build"
+
+# Pipe action response to another command
+terminal-notifier -message "Continue?" -action "Yes" -action "No" | \
+    grep -q "action_0" && echo "User chose Yes" || echo "User chose No"
+
+# Pipe list output for processing
+terminal-notifier -list "ALL" | awk '{print $1}'  # Extract group IDs
+
+# Chain commands
+cat status.txt | terminal-notifier -title "Status" && \
+    echo "Notification sent" >> log.txt
+```
+
+### Action Response Format
+
+Action button responses are output to stdout in a pipeable format:
+- Regular action: `ACTION:identifier`
+- Text input action (prompt/reply): `ACTION:identifier:text`
+
+Example usage in scripts:
+```bash
+RESPONSE=$(terminal-notifier -message "What to do?" \
+    -action "Continue" \
+    -action "Cancel")
+if echo "$RESPONSE" | grep -q "action_0"; then
+    echo "User chose Continue"
+elif echo "$RESPONSE" | grep -q "action_1"; then
+    echo "User chose Cancel"
+fi
+```
+
+### Prompt/Reply Notifications
+
+You can prompt users for text input and pipe their response to other commands. **See [ACTION_EXAMPLES.md](ACTION_EXAMPLES.md) for comprehensive real-world examples.**
+
+```bash
+# Simple prompt
+USER_INPUT=$(terminal-notifier -message "Enter commit message:" -prompt "OK")
+
+# Extract the user input text (format: ACTION:identifier:text)
+COMMIT_MSG=$(echo "$USER_INPUT" | sed 's/ACTION:action_0://')
+echo "$COMMIT_MSG" > commit.txt
+
+# Use in a pipeline
+terminal-notifier -message "Review?" -prompt "Comment" | \
+    sed 's/ACTION:action_0://' | \
+    xargs -I {} echo "User comment: {}"
+
+# Multiple prompts with different actions
+RESPONSE=$(terminal-notifier -message "Choose action:" \
+    -prompt "Add Note" \
+    -action "Skip")
+# Response will be either "ACTION:action_0:note_text" or "ACTION:action_1"
+```
 
 ## Examples
 
@@ -154,6 +236,22 @@ echo "Piped Message Data!" | ./terminal-notifier.app/Contents/MacOS/terminal-not
   -open "https://github.com/your-repo"
 ```
 
+### Prompt/Reply notification
+```bash
+# Ask user for input and use it in a script
+RESPONSE=$(./terminal-notifier.app/Contents/MacOS/terminal-notifier \
+  -message "Enter commit message:" \
+  -prompt "Commit")
+
+# Extract the user's input
+COMMIT_MSG=$(echo "$RESPONSE" | sed 's/ACTION:action_0://')
+
+# Use the input
+if [ -n "$COMMIT_MSG" ]; then
+  git commit -m "$COMMIT_MSG"
+fi
+```
+
 ### Grouped notifications
 ```bash
 ./terminal-notifier.app/Contents/MacOS/terminal-notifier \
@@ -172,6 +270,46 @@ echo "Piped Message Data!" | ./terminal-notifier.app/Contents/MacOS/terminal-not
 ### Debug mode
 ```bash
 ./terminal-notifier.app/Contents/MacOS/terminal-notifier --debug -message "Debug test" -title "Debug"
+```
+
+### Interactive notifications with action buttons (macOS 11.0+)
+```bash
+# Simple action buttons
+./terminal-notifier.app/Contents/MacOS/terminal-notifier \
+  -message "Build complete!" \
+  -title "Project Status" \
+  -action "View" \
+  -action "Dismiss"
+
+# Text input action (user can type a response)
+./terminal-notifier.app/Contents/MacOS/terminal-notifier \
+  -message "Pull request ready for review" \
+  -title "Code Review" \
+  -action-text "Reply" \
+  -action "Approve" \
+  -action-destructive "Reject"
+
+# Using -prompt alias (same as -action-text, outputs to stdout for piping)
+./terminal-notifier.app/Contents/MacOS/terminal-notifier \
+  -message "Enter your name:" \
+  -prompt "Submit" \
+  -action "Skip"
+
+# Action buttons with icons (macOS 12.0+)
+./terminal-notifier.app/Contents/MacOS/terminal-notifier \
+  -message "New message received" \
+  -title "Messages" \
+  -action-icon "Reply:envelope.fill" \
+  -action-icon "Delete:trash.fill"
+
+# Capture action button responses in scripts
+RESPONSE=$(./terminal-notifier.app/Contents/MacOS/terminal-notifier \
+  -message "What would you like to do?" \
+  -title "Question" \
+  -action "Yes" \
+  -action "No")
+echo "User selected: $RESPONSE"
+# Output format: ACTION:action_0 or ACTION:action_0:user_text (for text input)
 ```
 
 ## Building
@@ -245,6 +383,9 @@ This Swift rewrite provides improved functionality while maintaining compatibili
 | Debug mode (`--debug`) | ❌ | ✅ | **New** |
 | Piped input | ✅ | ✅ | **Maintained** |
 | Custom icon app bundles | ❌ | ✅ | **New** (workaround for removed options) |
+| Interactive action buttons | ❌ | ✅ | **New** (macOS 11.0+) |
+| Text input actions | ❌ | ✅ | **New** (macOS 11.0+) |
+| Action button icons | ❌ | ✅ | **New** (macOS 12.0+) |
 | **Framework** |
 | Notification framework | NSUserNotificationCenter (legacy) | UserNotifications (modern) | **Upgraded** |
 | **Code Quality** |

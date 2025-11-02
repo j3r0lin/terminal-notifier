@@ -11,10 +11,14 @@ tests/
 ├── unit/                    # Unit tests (Swift)
 │   ├── test_basic_functionality.swift
 │   ├── test_notification_frameworks.swift
-│   └── test_command_line_parsing.swift
+│   ├── test_command_line_parsing.swift
+│   ├── test_action_buttons.swift
+│   └── test_unix_output_streams.swift
 ├── integration/             # Integration tests (Shell)
 │   ├── test_basic_notifications.sh
-│   └── test_image_notifications.sh
+│   ├── test_image_notifications.sh
+│   ├── test_action_buttons.sh
+│   └── test_unix_tool_behavior.sh
 ├── frameworks/              # Framework-specific tests (Shell)
 │   └── test_user_notifications.sh
 └── examples/                # Example tests (Shell)
@@ -24,42 +28,38 @@ tests/
 
 ## Running Tests
 
-### All Tests
+### Available Test Targets
 ```bash
-make test                    # Run complete test suite
-make test-all-individual     # Run all individual tests
+make test                    # Send a test notification
+make test-actions           # Run action button tests
+make test-unix              # Test Unix tool behavior (stdin/stdout/stderr)
+make kill-processes         # Kill any running terminal-notifier processes
 ```
 
-### Individual Test Categories
+### Running Individual Tests
 
-#### Unit Tests
-```bash
-make test-unit-basic         # Basic functionality tests
-make test-unit-frameworks    # Notification framework tests
-make test-unit-parsing       # Command line parsing tests
-```
+You can run individual test files directly:
 
-#### Integration Tests
 ```bash
-make test-integration-basic  # Basic notifications
-make test-integration-images # Image notifications
-```
+# Unit tests
+swift tests/unit/test_basic_functionality.swift
+swift tests/unit/test_notification_frameworks.swift
+swift tests/unit/test_command_line_parsing.swift
+swift tests/unit/test_action_buttons.swift
+swift tests/unit/test_unix_output_streams.swift
 
-#### Framework-Specific Tests
-```bash
-make test-framework-user     # Notification system tests
-```
+# Integration tests
+./tests/integration/test_basic_notifications.sh
+./tests/integration/test_image_notifications.sh
+./tests/integration/test_action_buttons.sh
+./tests/integration/test_unix_tool_behavior.sh
 
-#### Example Tests
-```bash
-make test-examples-basic     # Basic examples
-make test-examples-advanced  # Advanced examples
-```
+# Framework tests
+./tests/frameworks/test_user_notifications.sh
 
-### Quick Tests
-```bash
-make test-quick              # Unit tests only
-make test-ci                 # CI-friendly tests
+# Example tests
+./tests/examples/test_basic_examples.sh
+./tests/examples/test_advanced_examples.sh
 ```
 
 ## Test Descriptions
@@ -87,7 +87,23 @@ Tests command line argument parsing:
 - Basic argument parsing
 - Debug flag detection
 - Optional arguments
-- Debug flag detection
+- Content image handling
+- Action button parsing (default, text input, destructive)
+- Action icon parsing
+
+#### `test_action_buttons.swift`
+Tests action button creation and properties:
+- Basic action buttons
+- Destructive action buttons
+- Text input action buttons
+- Action buttons with SF Symbol icons (macOS 12.0+)
+- Notification category creation
+
+#### `test_unix_output_streams.swift`
+Tests Unix output stream concepts:
+- Output stream separation (stdout vs stderr)
+- UTF-8 encoding for output
+- Message formatting
 
 ### Integration Tests
 
@@ -106,6 +122,25 @@ Tests image notification functionality:
 - Both content image and app icon
 - Invalid image path handling
 - Firefox icon testing
+
+#### `test_action_buttons.sh`
+Tests interactive action button functionality:
+- Action button argument parsing
+- Basic action buttons
+- Text input action buttons
+- Destructive action buttons
+- Action response output format
+- Process termination after actions
+
+#### `test_unix_tool_behavior.sh`
+Tests Unix tool behavior for proper shell integration:
+- Stdin piping (reading messages from pipe)
+- Stdout output (action responses, list, help, version)
+- Stderr output (debug, errors)
+- Exit codes (0 for success, 1 for errors)
+- Command line precedence (-message over stdin)
+- Output stream separation
+- Clean process exit
 
 ### Framework-Specific Tests
 
@@ -140,11 +175,13 @@ Demonstrates advanced usage examples:
 
 ## Test Features
 
-### Framework Selection
-The tests demonstrate both automatic and explicit framework selection:
-
-- **Automatic**: The system chooses the best framework based on features
-- **Modern notifications**: Uses the latest macOS notification system
+### Unix Tool Behavior
+Tests verify proper Unix tool conventions:
+- **stdin**: Reads notification message from pipe
+- **stdout**: Action responses, list output, help/version
+- **stderr**: Debug output, error messages
+- **Exit codes**: 0 for success, 1 for errors
+- **Piping**: Works seamlessly in shell pipelines
 
 ### Debug Mode
 All tests support debug mode with `--debug` flag for detailed output.
@@ -155,27 +192,6 @@ Tests verify proper error handling for:
 - Permission issues
 - Framework limitations
 
-## Running Individual Tests
-
-You can run any individual test file directly:
-
-```bash
-# Unit tests
-swift tests/unit/test_basic_functionality.swift
-swift tests/unit/test_notification_frameworks.swift
-swift tests/unit/test_command_line_parsing.swift
-
-# Integration tests
-./tests/integration/test_basic_notifications.sh
-./tests/integration/test_image_notifications.sh
-
-# Framework tests
-./tests/frameworks/test_user_notifications.sh
-
-# Example tests
-./tests/examples/test_basic_examples.sh
-./tests/examples/test_advanced_examples.sh
-```
 
 ## Test Requirements
 
