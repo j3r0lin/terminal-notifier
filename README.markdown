@@ -3,7 +3,7 @@
 [![GitHub release](https://img.shields.io/github/release/julienXX/terminal-notifier.svg)](https://github.com/julienXX/terminal-notifier/releases)
 
 terminal-notifier is a command-line tool to send macOS User Notifications,
-which are available on macOS 10.10 and higher.
+which are available on macOS 10.14 (Mojave) and higher.
 
 
 ## News
@@ -17,12 +17,12 @@ Sticking to two smaller specialized tools will hopefully make them easier to mai
 
 ## Caveats
 
-* It is currently packaged as an application bundle, because `NSUserNotification`
-  does not work from a ‘Foundation tool’. [radar://11956694](radar://11956694)
+* It is currently packaged as an application bundle, because `UNUserNotificationCenter`
+  requires an application bundle to deliver notifications.
+
+* This version requires macOS 10.14 (Mojave) or later. If you’re using an older macOS, please use terminal-notifier 2.0.0.
 
 * If you intend to package terminal-notifier with your app to distribute it on the Mac App Store, please use 1.5.2; version 1.6.0+ uses a private method override, which is not allowed in the App Store Guidelines.
-
-* If you're using macOS < 10.10 you should use terminal-notifier 1.6.3.
 
 * If you're looking for sticky notifications or more actions on a notification please use [alerter](https://github.com/vjeantet/alerter)
 
